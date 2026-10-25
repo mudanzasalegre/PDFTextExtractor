@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Extractor PDF y Audio Español</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="hero">
+    <div>
+      <p class="eyebrow">PDF real + OCR + voz es-ES</p>
+      <h1>Extractor de texto y conversor TXT a audio</h1>
+      <p class="lead">Sube un PDF, extrae un rango de páginas y descarga el texto. Después puedes limpiar el TXT a mano y volver a subirlo para convertirlo en audio leído con voz de español de España.</p>
+    </div>
+  </header>
+
+  <nav class="tabs" aria-label="Flujos de la aplicación">
+    <button class="tab-button active" type="button" data-tab="pdf">PDF → texto</button>
+    <button class="tab-button" type="button" data-tab="tts">TXT → audio</button>
+  </nav>
+
+  <main>
+    <section id="tab-pdf" class="tab-panel active">
+      <div class="layout">
+        <section class="card">
+          <h2>1. PDF y rango</h2>
+          <form id="extract-form">
+            <label class="field full">
+              <span>Archivo PDF</span>
+              <input id="file" type="file" accept="application/pdf,.pdf" required />
+            </label>
+
+            <div class="grid two">
+              <label class="field">
+                <span>Página inicial</span>
+                <input id="start_page" type="number" min="1" value="1" required />
+              </label>
+              <label class="field">
+                <span>Página final <small>(vacío = hasta el final)</small></span>
+                <input id="end_page" type="number" min="1" placeholder="Ej. 19" />
+              </label>
+            </div>
+
+            <h2>2. Modo de extracción</h2>
+            <div class="grid two">
+              <label class="field">
+                <span>Modo</span>
+                <select id="mode">
+                  <option value="academic" selected>Académico / documental</option>
+                  <option value="clean">Lectura limpia</option>
+                  <option value="faithful">Fiel al PDF</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>OCR</span>
+                <select id="ocr_strategy">
+                  <option value="auto" selected>Automático</option>
+                  <option value="never">Nunca OCR</option>
+                  <option value="always">Forzar OCR</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="grid two">
+              <label class="field">
+                <span>Idioma Tesseract</span>
+                <input id="language" value="spa+eng" />
+              </label>
+              <label class="field">
+                <span>DPI OCR</span>
+                <input id="ocr_dpi" type="number" min="120" max="450" value="250" />
+              </label>
+            </div>
+
+            <h2>3. Limpieza y estructura</h2>
+            <div class="checks">
+              <label><input id="remove_repeated_headers_footers" type="checkbox" checked /> Quitar cabeceras/pies repetidos</label>
+              <label><input id="strip_page_numbers" type="checkbox" checked /> Quitar números de página</label>
+              <label><input id="include_image_captions" type="checkbox" checked /> Incluir pies de imagen/tabla</label>
+              <label><input id="mark_captions" type="checkbox" /> Marcar pies detectados</label>
+              <label><input id="preserve_line_breaks" type="checkbox" checked /> Conservar saltos de línea</label>
+              <label><input id="page_breaks" type="checkbox" checked /> Separar por página</label>
+              <label><input id="sort_reading_order" type="checkbox" checked /> Reordenar lectura automáticamente</label>
+              <label><input id="generate_searchable_pdf" type="checkbox" /> Crear PDF buscable adicional</label>
+            </div>
+
+            <details>
+              <summary>Ajustes avanzados</summary>
+              <div class="grid four compact">
+                <label class="field">
+                  <span>Margen superior %</span>
+                  <input id="top_margin_pct" type="number" min="0" max="45" step="0.5" value="0" />
+                </label>
+                <label class="field">
+                  <span>Margen inferior %</span>
+                  <input id="bottom_margin_pct" type="number" min="0" max="45" step="0.5" value="0" />
+                </label>
+                <label class="field">
+                  <span>Margen izquierdo %</span>
+                  <input id="left_margin_pct" type="number" min="0" max="45" step="0.5" value="0" />
+                </label>
+                <label class="field">
+                  <span>Margen derecho %</span>
+                  <input id="right_margin_pct" type="number" min="0" max="45" step="0.5" value="0" />
+                </label>
+              </div>
+              <div class="grid four compact">
+                <label class="field">
+                  <span>Zona auto cabecera/pie %</span>
+                  <input id="auto_header_footer_zone_pct" type="number" min="2" max="30" step="1" value="12" />
+                </label>
+                <label class="field">
+                  <span>Repetición mínima %</span>
+                  <input id="repeated_line_min_ratio" type="number" min="10" max="100" step="5" value="55" />
+                </label>
+                <label class="field">
+                  <span>Mín. caracteres texto real</span>
+                  <input id="native_min_chars" type="number" min="0" max="5000" value="80" />
+                </label>
+                <label class="field">
+                  <span>Mín. palabras texto real</span>
+                  <input id="native_min_words" type="number" min="0" max="1000" value="12" />
+                </label>
+              </div>
+            </details>
+
+            <button id="submit" class="primary" type="submit">Extraer texto</button>
+          </form>
+        </section>
+
+        <section class="card result-card">
+          <h2>Resultado</h2>
+          <div id="status" class="status idle">Sin trabajo en curso</div>
+          <div class="progress-shell" aria-label="Progreso">
+            <div id="progress" class="progress"></div>
+          </div>
+          <div id="downloads" class="downloads"></div>
+          <div id="reports"></div>
+          <h3>Vista previa</h3>
+          <pre id="preview" class="preview"></pre>
+        </section>
+      </div>
+    </section>
+
+    <section id="tab-tts" class="tab-panel">
+      <div class="layout">
+        <section class="card">
+          <h2>1. TXT limpio</h2>
+          <p class="note">Sube el TXT que hayas limpiado a mano. La app no traduce: lo lee como español de España con voces es-ES.</p>
+          <form id="tts-form">
+            <label class="field full">
+              <span>Archivo TXT</span>
+              <input id="tts_file" type="file" accept="text/plain,.txt" required />
+            </label>
+
+            <h2>2. Voz</h2>
+            <div class="grid two">
+              <label class="field">
+                <span>Motor de voz</span>
+                <select id="tts_provider">
+                  <option value="auto" selected>Automático: calidad alta y respaldo local</option>
+                  <option value="edge">Edge neural online</option>
+                  <option value="piper">Piper local</option>
+                  <option value="espeak">eSpeak local básico</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Voz español España</span>
+                <select id="tts_voice"></select>
+              </label>
+            </div>
+
+            <div class="grid two">
+              <label class="field">
+                <span>Formato</span>
+                <select id="tts_audio_format">
+                  <option value="mp3" selected>MP3</option>
+                  <option value="wav">WAV</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Bitrate MP3</span>
+                <select id="tts_bitrate_kbps">
+                  <option value="96">96 kbps</option>
+                  <option value="128" selected>128 kbps</option>
+                  <option value="192">192 kbps</option>
+                  <option value="256">256 kbps</option>
+                  <option value="320">320 kbps</option>
+                </select>
+              </label>
+            </div>
+
+            <h2>3. Lectura</h2>
+            <div class="grid three">
+              <label class="field">
+                <span>Velocidad %</span>
+                <input id="tts_rate" type="number" min="-50" max="50" value="-5" />
+              </label>
+              <label class="field">
+                <span>Tono Hz</span>
+                <input id="tts_pitch_hz" type="number" min="-100" max="100" value="0" />
+              </label>
+              <label class="field">
+                <span>Volumen %</span>
+                <input id="tts_volume" type="number" min="-50" max="50" value="0" />
+              </label>
+            </div>
+
+            <div class="checks single">
+              <label><input id="tts_normalize_for_narration" type="checkbox" checked /> Normalizar saltos de línea para lectura natural</label>
+              <label><input id="tts_remove_page_markers" type="checkbox" checked /> Quitar marcadores tipo “--- Página 5 ---”</label>
+            </div>
+
+            <details>
+              <summary>Ajustes avanzados de audio</summary>
+              <div class="grid two compact">
+                <label class="field">
+                  <span>Caracteres por fragmento</span>
+                  <input id="tts_chunk_chars" type="number" min="300" max="4000" value="1800" />
+                </label>
+                <label class="field">
+                  <span>Título opcional</span>
+                  <input id="tts_title" type="text" maxlength="160" placeholder="Ej. Capítulo 1" />
+                </label>
+              </div>
+            </details>
+
+            <button id="tts_submit" class="primary" type="submit">Convertir TXT a audio</button>
+          </form>
+        </section>
+
+        <section class="card result-card">
+          <h2>Audio</h2>
+          <div id="tts_status" class="status idle">Sin conversión en curso</div>
+          <div class="progress-shell" aria-label="Progreso de audio">
+            <div id="tts_progress" class="progress"></div>
+          </div>
+          <div id="tts_audio_box" class="audio-box"></div>
+          <div id="tts_downloads" class="downloads"></div>
+          <div id="tts_stats" class="stats-box"></div>
+          <h3>Vista previa del texto narrado</h3>
+          <pre id="tts_preview" class="preview"></pre>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Procesamiento local para PDF/OCR. La pestaña TXT→audio usa voces es-ES; en modo automático intenta primero calidad neural online y después motores locales.</p>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

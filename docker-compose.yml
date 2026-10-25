@@ -1,0 +1,18 @@
+services:
+  pdf-audio-extractor:
+    build: .
+    container_name: pdf-audio-extractor-es
+    ports:
+      - "8000:8000"
+    environment:
+      STORAGE_DIR: /app/storage
+      MAX_UPLOAD_MB: 300
+      MAX_TTS_UPLOAD_MB: 50
+      MAX_TTS_CHARS: 750000
+      MAX_WORKERS: 2
+      MAX_TTS_WORKERS: 1
+      PIPER_MODELS_DIR: /app/models/piper
+      PIPER_DEFAULT_VOICE: es_ES-sharvard-medium
+    volumes:
+      - ./storage:/app/storage
+    restart: unless-stopped
